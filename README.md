@@ -70,5 +70,15 @@ When you normally encrypt files using filecrypt, it stores a backup of the passw
 
 If you wish to not save the password then you can use the ```--no-backup``` argument while encrypting the file. 
 ```bash 
-./filecrypt -e <file-to-encrypt> -k <key> -o <output-file> --no-backup```
+./filecrypt -e <file-to-encrypt> -k <key> -o <output-file> --no-backup
+```
+## Downloads
+
+### Linux 
+### Download an ```ELF 64-bit LSB pie executable, x86-64```
+[Download](https://github.com/Aavtic/FileCrypt/blob/executables/release/filecrypt)
+
+
+
+
 
