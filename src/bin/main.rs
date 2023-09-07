@@ -4,7 +4,6 @@ use serde::{Serialize,Deserialize};
 use serde_json::{json, Value};
 use magic_crypt::{new_magic_crypt, MagicCryptTrait};
 
-
 #[derive(Serialize)]
 enum Data {
     Unencrypted(Vec<u8>),
@@ -16,21 +15,35 @@ struct Decrypted {
     filename: String, 
     data: Vec<u8>
 }
-
-
-
 fn main() {
-    let help_message = "Usage : filecrypt [-e] [-d] [-o] [-k]\n\nOptions : \n\t-e\t\tEncrypt file -> filecrypt -e file.<extension> <filename> -k <key> -o <output file>\n\t-d\t\tDecrypt file -> filecrypt -d file.<extension> <filename> -k <key> -o <output file>";
+    let help_message = "Usage : filecrypt [-e] [-d] [-o] [-k]\n\nOptions : \n\t-e\t\tEncrypt file -> filecrypt -e file.<extension> <filename> -k <key> -o <output file>\n\t-d\t\tDecrypt file -> filecrypt -d file.<extension> <filename> -k <key> -o <output file>\n\t--no-backup\tStore the backup of the files in the .filecrypt folder in the current directory";
     let arguments = std::env::args().collect::<Vec<String>>();
-    if arguments.len() != 7 {
+    if !((arguments.len() == 7) | (arguments.len() == 8)){
         eprintln!("{}", help_message);
         std::process::exit(1);
     }
     println!("[+] Filecrypt Started");
+
+
+      
+    let backup:bool;
     let filename:&str;
     let output_filename:&str;
     let encrypt:bool;
     let key:&str;
+
+    if arguments.len() == 8 {
+        if arguments.contains(&"--no-backup".to_string()) {
+            backup = false;
+        }else {
+            backup = true ;
+            println!("backup set to true")
+        }
+    }else {
+        backup = true;
+    }
+ 
+    
     if (&arguments[1] == "-e") && (&arguments[3] == "-k") && (&arguments[5] == "-o") {
         if std::path::Path::new(&arguments[2]).exists(){
             filename = &arguments[2];
@@ -60,14 +73,14 @@ fn main() {
         let file_contents = get_contents(filename);
         if let Ok(data) = file_contents {
             //encrypts the string and saves it into a file
-            encrypt_decrypt(encrypt, Data::Unencrypted(data), key, filename, output_filename);
+            encrypt_decrypt(encrypt, Data::Unencrypted(data), key, filename, output_filename, backup);
         }else if let Err(e) = file_contents {
             eprintln!("Error while reading file {filename}\n error : {e}");
         }        
     } else {
         let file_contents = get_str_contents(filename);
         if let Ok(data) = file_contents {
-            encrypt_decrypt(encrypt, Data::Encrypted(data), key, filename, output_filename);
+            encrypt_decrypt(encrypt, Data::Encrypted(data), key, filename, output_filename, backup);
         } else if let Err(e) = file_contents{
             if e.kind() == std::io::ErrorKind::InvalidData {
                 eprintln!("[\\\\]The file you want to decrypt does not seem to be encrypted by filecrypt\nExiting...");
@@ -77,7 +90,7 @@ fn main() {
     
 }
 // Converting the file data to a json is not necessary. found it on the way
-fn encrypt_decrypt(encrypt:bool,data:Data, key:&str, filename:&str, rfilename:&str) { 
+fn encrypt_decrypt(encrypt:bool,data:Data, key:&str, filename:&str, rfilename:&str, if_backup:bool) { 
     if encrypt {
         match &data {
             Data::Unencrypted(vec)  => {
@@ -97,7 +110,7 @@ fn encrypt_decrypt(encrypt:bool,data:Data, key:&str, filename:&str, rfilename:&s
             _ => {}
         }
         
-        save_to_json(filename, key);
+        save_to_json(filename, key, if_backup);
     } else {
         match &data {
             Data::Encrypted(string) => {
@@ -139,48 +152,54 @@ fn get_contents(filename:&str) -> Result<Vec<u8>, std::io::Error> {
 fn get_str_contents(filename:&str) -> Result<String, std::io::Error> {
     std::fs::read_to_string(filename)
 }
-pub fn save_to_json(filename:&str, key:&str) {
-    let mpwd = String::from_utf8(vec![104, 101, 108, 108, 111, 102, 114, 105, 101, 110, 100]).unwrap();
-    let raw_json = std::fs::read_to_string("./filecrypt/filecrypt.json");
-    if let Ok(json_data) = &raw_json {
-        let json_data:Result<Value, serde_json::Error> = serde_json::from_str(&json_data);
-        if let Ok(Value::Object(parsed_map)) = json_data {
-            let mut data:std::collections::HashMap<String, Value> = parsed_map.into_iter().collect();
-            data.insert(filename.to_string(), Value::String(key.to_string()));
-            let json_data = serde_json::to_string(&data);
-            if let Ok(json_data) = json_data {
-                match std::fs::write("./filecrypt/filecrypt.json", json_data) {
-                    Ok(_) => {},
-                    Err(e) => eprintln!("Error while writing backup to json file!\nError:{}", e)
-                }
-            }else if let Err(e) = json_data {
-                eprintln!("Error while converting json to string \njson:{:?}\nerror:{}", &data, e);
-            }
-        } else if let Err(e) = &json_data {
-            eprintln!("Error while converting string to json\njson:{:?},\nError:{}", &json_data, e );
-        }
-    } else if let Err(e) = raw_json {
-        if e.kind() == std::io::ErrorKind::NotFound {
-            if !(std::path::Path::new("filecrypt").is_dir()){
-                match std::fs::create_dir("filecrypt") {
-                    Ok(_) => {},
-                    Err(e) => eprintln!("Error while creating backup directory \nerror: {}", e)
-                }
-            }
-            match std::fs::File::create("./filecrypt/filecrypt.json") {
-                Ok(_) => {
-                    match std::fs::write("./filecrypt/filecrypt.json", b"{}") {
-                        Ok(_) => {save_to_json(filename, key)},
-                        Err(e) => eprintln!("Error while writing to backup file\nerror: {}", e)
+fn save_to_json(filename:&str, key:&str, if_backup:bool) {
+    if if_backup {
+        println!("Entered save_to_json");
+        let raw_json = std::fs::read_to_string(".filecrypt/filecrypt.json");
+        if let Ok(json_data) = &raw_json {
+            let json_data:Result<Value, serde_json::Error> = serde_json::from_str(&json_data);
+            if let Ok(Value::Object(parsed_map)) = json_data {
+                let mut data:std::collections::HashMap<String, Value> = parsed_map.into_iter().collect();
+                data.insert(filename.to_string(), Value::String(key.to_string()));
+                let json_data = serde_json::to_string(&data);
+                if let Ok(json_data) = json_data {
+                    match std::fs::write(".filecrypt/filecrypt.json", json_data) {
+                        Ok(_) => {},
+                        Err(e) => eprintln!("Error while writingbackup to json file!\nError:{}", e)
                     }
-                },
-                Err(e) => eprintln!("Error while creating backup files\nerror: {}", e) 
+                }else if let Err(e) = json_data {
+                    eprintln!("Error while converting json to string \njson:{:?}\nerror:{}", &data, e);
+                }
+            } else if let Err(e) = &json_data {
+                eprintln!("Error while converting string to json\njson:{:?},\nError:{}", &json_data, e );
             }
-        } else {
-            eprintln!("error while creating backup file \n{e}");
+        } else if let Err(e) = raw_json {
+            if e.kind() == std::io::ErrorKind::NotFound {
+                println!("Entered NotFound");
+                if !(std::path::Path::new(".filecrypt").is_dir()){
+                    match std::fs::create_dir(".filecrypt") {
+                        Ok(_) => {},
+                        Err(e) => eprintln!("Error while creating backup directory \nerror: {}", e)
+                    }
+                }                
+                println!("creating file .filecrypt.json");
+                match std::fs::File::create("./.filecrypt/filecrypt.json") {
+                    Ok(_) => {
+                        match std::fs::write("./.filecrypt/filecrypt.json", b"{}") {
+                            Ok(_) => {save_to_json(filename, key, if_backup)},
+                            Err(e) => eprintln!("Error while writing to backup file\nerror: {}", e)
+                        }
+                    },
+                    Err(e) => eprintln!("Error while creating backup files\nerror: {}", e) 
+                }
+            } else {
+                eprintln!("error while creating backup file \n{e}");
+            }
+        } 
+        
         }
-    }
 }
+
 
 pub fn write_to_file(filename:&str, data:String) -> Result<String, std::io::Error>{
     std::fs::write(filename, &data)?;
@@ -190,3 +209,4 @@ pub fn write_to_file(filename:&str, data:String) -> Result<String, std::io::Erro
     }
 
 }
+
