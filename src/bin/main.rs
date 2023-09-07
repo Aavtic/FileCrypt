@@ -154,7 +154,6 @@ fn get_str_contents(filename:&str) -> Result<String, std::io::Error> {
 }
 fn save_to_json(filename:&str, key:&str, if_backup:bool) {
     if if_backup {
-        println!("Entered save_to_json");
         let raw_json = std::fs::read_to_string(".filecrypt/filecrypt.json");
         if let Ok(json_data) = &raw_json {
             let json_data:Result<Value, serde_json::Error> = serde_json::from_str(&json_data);
@@ -175,14 +174,12 @@ fn save_to_json(filename:&str, key:&str, if_backup:bool) {
             }
         } else if let Err(e) = raw_json {
             if e.kind() == std::io::ErrorKind::NotFound {
-                println!("Entered NotFound");
                 if !(std::path::Path::new(".filecrypt").is_dir()){
                     match std::fs::create_dir(".filecrypt") {
                         Ok(_) => {},
                         Err(e) => eprintln!("Error while creating backup directory \nerror: {}", e)
                     }
                 }                
-                println!("creating file .filecrypt.json");
                 match std::fs::File::create("./.filecrypt/filecrypt.json") {
                     Ok(_) => {
                         match std::fs::write("./.filecrypt/filecrypt.json", b"{}") {
