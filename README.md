@@ -77,7 +77,9 @@ If you wish to not save the password then you can use the ```--no-backup``` argu
 ### Linux 
 ### Download an ```ELF 64-bit LSB pie executable, x86-64```
 [Download](https://github.com/Aavtic/FileCrypt/releases/download/download/filecrypt.elf)
-
+### Windows
+### Download a .exe file
+[Download]()
 
 
 
