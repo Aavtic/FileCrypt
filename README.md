@@ -79,7 +79,7 @@ If you wish to not save the password then you can use the ```--no-backup``` argu
 [Download](https://github.com/Aavtic/FileCrypt/releases/download/download/filecrypt.elf)
 ### Windows
 ### Download a .exe file
-[Download]()
+[Download](https://github.com/Aavtic/FileCrypt/releases/download/download/filecrypt.exe)
 
 
 
