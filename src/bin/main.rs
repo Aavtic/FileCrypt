@@ -16,6 +16,9 @@ struct Decrypted {
     filename: String, 
     data: Vec<u8>
 }
+
+
+
 fn main() {
     let help_message = "Usage : filecrypt [-e] [-d] [-o] [-k]\n\nOptions : \n\t-e\t\tEncrypt file -> filecrypt -e file.<extension> <filename> -k <key> -o <output file>\n\t-d\t\tDecrypt file -> filecrypt -d file.<extension> <filename> -k <key> -o <output file>";
     let arguments = std::env::args().collect::<Vec<String>>();
