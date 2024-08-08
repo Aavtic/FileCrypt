@@ -10,10 +10,6 @@
   </p>
 </p>
 
-
-### socials
-
-
 https://github.com/Aavtic/FileCrypt/assets/89965681/ec881c68-a247-4c2f-992f-f67f6298b967
 
 
