@@ -10,8 +10,8 @@
   </p>
 </p>
 
-https://github.com/Aavtic/FileCrypt/assets/89965681/ec881c68-a247-4c2f-992f-f67f6298b967
 
+https://github.com/user-attachments/assets/e41b7158-9239-4bd4-9e34-04a3097fa9ff
 
 
 ### Installation & Setup
